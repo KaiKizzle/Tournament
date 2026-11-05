@@ -4,114 +4,154 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Vegetable Championship</title>
-<meta name="description" content="Vote on the 32-vegetable double-elimination bracket.">
+<meta name="description" content="Vote on the 32-vegetable double-elimination bracket, one duel at a time.">
+<link rel="icon" href="images/carrot.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Figtree:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap">
-<style>*,*::before,*::after{box-sizing:border-box}body{margin:0}[hidden]{display:none!important}</style>
 <style>
-/* Layout: stacked brackets (winners, losers, finals), each a horizontally scrollable row of round columns with drawn connectors; a summary strip on top. */
+/* Layout: duel stage on top (the one open vote), summary strip, then winners / losers / final brackets as horizontally scrollable round columns with drawn connectors. */
 :root{
-  --bg:#F2F5EC; --surface:#FFFFFF; --ink:#1C2A1E; --muted:#617059; --line:#D3DCC8;
+  --bg:#F2F5EC; --surface:#FFFFFF; --ink:#1C2A1E; --muted:#617059; --line:#D3DCC8; --plate:#F6F8F1;
   --leaf:#2E7A3A; --leaf-soft:#E2F0DF; --beet:#9C2B56; --beet-soft:#F6E1E9; --corn:#B8860B; --corn-soft:#FBF0CF;
   --display:"Bagel Fat One","Arial Rounded MT Bold",system-ui,sans-serif;
   --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
   --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#10160F; --surface:#182117; --ink:#E5ECE0; --muted:#94A28C; --line:#2B3728;
+  --bg:#10160F; --surface:#182117; --ink:#E5ECE0; --muted:#94A28C; --line:#2B3728; --plate:#E9EEE2;
   --leaf:#72C47F; --leaf-soft:#1D3220; --beet:#E384A8; --beet-soft:#3A1C28; --corn:#F0C64B; --corn-soft:#3A3014; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#10160F; --surface:#182117; --ink:#E5ECE0; --muted:#94A28C; --line:#2B3728;
+  --bg:#10160F; --surface:#182117; --ink:#E5ECE0; --muted:#94A28C; --line:#2B3728; --plate:#E9EEE2;
   --leaf:#72C47F; --leaf-soft:#1D3220; --beet:#E384A8; --beet-soft:#3A1C28; --corn:#F0C64B; --corn-soft:#3A3014; color-scheme:dark}
-body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45}
-.wrap{max-width:1500px;margin:0 auto;padding-block:28px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:36px}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45}
+img{max-width:100%}
+.wrap{max-width:1500px;margin:0 auto;padding-block:28px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:32px}
 header{display:flex;flex-direction:column;gap:6px}
 h1{font-family:var(--display);font-weight:400;font-size:clamp(34px,6vw,60px);line-height:1;margin:0;color:var(--leaf);text-wrap:balance;letter-spacing:.5px}
+h2{font-family:var(--display);font-weight:400;font-size:28px;margin:0;line-height:1.05;text-wrap:balance}
 .sub{color:var(--muted);margin:0;max-width:65ch}
+.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:700}
+.notice{font-size:13px;color:var(--muted)}
+.notice.err{color:var(--beet)}
+.code{font-family:var(--mono);font-size:11px;color:var(--muted);flex:none}
+
+/* icons */
+.ico{display:inline-grid;place-items:center;border-radius:50%;background:var(--plate);flex:none;overflow:hidden}
+.ico img{width:84%;height:84%;display:block}
+.ico.s{width:24px;height:24px}
+.ico.m{width:44px;height:44px}
+.ico.l{width:clamp(84px,18vw,120px);height:clamp(84px,18vw,120px)}
+
+/* buttons */
+.btn{all:unset;box-sizing:border-box;cursor:pointer;font-weight:700;font-size:14px;padding:9px 16px;border-radius:10px;background:var(--leaf);color:var(--surface);text-align:center;line-height:1.2}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.btn.warn{background:var(--beet)}
+.btn.small{padding:6px 12px;font-size:13px}
+.btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.btn[disabled]{opacity:.45;cursor:default}
+
+/* stage */
+.stage{background:var(--surface);border:1.5px solid var(--line);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:16px}
+.stage.live{border-color:var(--leaf)}
+.stage-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px 24px;flex-wrap:wrap}
+.stage-head p{margin:6px 0 0;color:var(--muted);max-width:60ch;font-size:14px}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:3px 10px;border-radius:99px;background:var(--line);color:var(--muted)}
+.pill.on{background:var(--leaf-soft);color:var(--leaf)}
+.pill.on .dot{animation:pulse 1.6s ease-in-out infinite}
+.pill .dot{width:7px;height:7px;border-radius:50%;background:currentColor}
+@keyframes pulse{50%{opacity:.3}}
+.duel{display:grid;grid-template-columns:1fr auto 1fr;gap:14px;align-items:stretch}
+.vs{align-self:center;font-family:var(--display);font-size:28px;color:var(--muted)}
+.pick{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:10px;padding:18px 12px;border-radius:16px;border:2px solid var(--line);text-align:center;min-width:0;transition:border-color .15s,transform .15s}
+.pick:hover:not([disabled]){border-color:var(--leaf);transform:translateY(-2px)}
+.pick:focus-visible{outline:2px solid var(--leaf);outline-offset:3px}
+.pick[disabled]{cursor:default}
+.pick .nm{font-family:var(--display);font-size:clamp(18px,3vw,24px);line-height:1.1;overflow-wrap:anywhere}
+.pick .meta{font-size:12px;color:var(--muted)}
+.pick.mine{border-color:var(--leaf);background:var(--leaf-soft)}
+.pick.mine .meta{color:var(--leaf);font-weight:700}
+.admin{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;padding:12px 14px;border-radius:12px;background:var(--corn-soft);border:1px dashed var(--corn)}
+.admin .lbl{font-size:13px;flex:1;min-width:200px}
+.queue{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px}
+.qcard{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;min-width:0}
+.qcard .who{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;font-size:13.5px}
+.qcard .who span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qicons{display:flex}
+.qicons .ico+.ico{margin-left:-10px;box-shadow:0 0 0 2px var(--surface)}
+
+/* summary */
 .summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:8px;min-width:0}
-.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:700}
 .big{font-family:var(--display);font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums}
 .bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden}
 .bar>i{display:block;height:100%;background:var(--leaf);border-radius:99px;transition:width .4s}
-.next{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
-.next li{display:flex;gap:8px;align-items:baseline;font-size:14px}
-.code{font-family:var(--mono);font-size:11px;color:var(--muted);flex:none}
-.champ{color:var(--corn)}
+.champ{color:var(--corn);display:flex;align-items:center;gap:10px}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+
+/* brackets */
 section.bk{display:flex;flex-direction:column;gap:12px}
 .bk-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
-h2{font-family:var(--display);font-weight:400;font-size:28px;margin:0;line-height:1}
-.bk-W h2{color:var(--leaf)} .bk-L h2{color:var(--beet)} .bk-F h2{color:var(--corn)}
 .bk-note{color:var(--muted);font-size:13px}
+.bk-W h2{color:var(--leaf)} .bk-L h2{color:var(--beet)} .bk-F h2{color:var(--corn)}
+.bk-W{--accent:var(--leaf);--soft:var(--leaf-soft)} .bk-L{--accent:var(--beet);--soft:var(--beet-soft)} .bk-F{--accent:var(--corn);--soft:var(--corn-soft)}
 .scroller{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:16px;-webkit-overflow-scrolling:touch}
 .bracket{position:relative;display:flex;gap:44px;padding:18px 22px 22px;width:max-content}
 .bracket svg.wires{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
 .wires path{fill:none;stroke:var(--line);stroke-width:2}
 .wires path.live{stroke:var(--accent)}
-.round{display:flex;flex-direction:column;gap:10px;width:212px}
+.round{display:flex;flex-direction:column;gap:10px;width:222px}
 .round-name{font-size:11px;text-transform:uppercase;letter-spacing:.12em;font-weight:700;color:var(--muted);height:16px}
 .matches{flex:1;display:flex;flex-direction:column;justify-content:space-around;gap:12px}
-.bk-W{--accent:var(--leaf);--soft:var(--leaf-soft)} .bk-L{--accent:var(--beet);--soft:var(--beet-soft)} .bk-F{--accent:var(--corn);--soft:var(--corn-soft)}
-.match{position:relative;z-index:1;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;overflow:hidden}
-.match.ready{border-color:var(--accent)}
-.match .mcode{position:absolute;right:8px;top:-1px;font-family:var(--mono);font-size:9.5px;color:var(--muted);background:var(--surface);padding:0 3px;transform:translateY(-50%);display:none}
-.slot{display:flex;align-items:center;gap:8px;height:30px;padding:0 10px;font-size:14px;min-width:0}
+.match{position:relative;z-index:1;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s}
+.match:hover{border-color:var(--accent)}
+.match:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.match.ready{border-style:dashed;border-color:var(--accent)}
+.match.voting{border-style:solid;border-color:var(--accent);box-shadow:0 0 0 4px var(--soft)}
+.slot{display:flex;align-items:center;gap:8px;height:34px;padding:0 10px 0 6px;font-size:14px;min-width:0}
 .slot+.slot{border-top:1px solid var(--line)}
-.seed{flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-family:var(--mono);font-size:10px;background:var(--soft);color:var(--accent)}
+.seed{flex:none;font-family:var(--mono);font-size:10px;color:var(--muted);width:16px;text-align:right}
 .nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .slot.tbd .nm{color:var(--muted);font-style:italic;font-size:12.5px}
-.slot.tbd .seed{background:transparent;border:1px dashed var(--line);color:transparent}
+.slot.tbd .ico{background:transparent;border:1px dashed var(--line)}
 .slot.win{background:var(--soft);font-weight:700}
 .slot.win::after{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent);flex:none}
 .slot.lose .nm{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
-.slot.lose .seed{opacity:.5}
+.slot.lose .ico{opacity:.45;filter:grayscale(.6)}
 .finals{display:flex;gap:44px;align-items:center;padding:22px;flex-wrap:wrap}
 .finals .round{width:240px}
-.trophy{display:flex;flex-direction:column;gap:6px;padding:18px 20px;border-radius:14px;background:var(--corn-soft);border:1.5px solid var(--corn);min-width:200px}
+.trophy{display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:14px;background:var(--corn-soft);border:1.5px solid var(--corn);min-width:220px}
 .trophy .big{color:var(--corn)}
-.state{padding:40px 22px;color:var(--muted);text-align:center}
-.state p{margin:6px 0 14px}
-.state strong{display:block;color:var(--ink);font-size:17px;margin-bottom:4px}
-.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
-.legend span{display:inline-flex;align-items:center;gap:6px}
-.legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
-.vote{display:flex;flex-direction:column;gap:14px;background:var(--surface);border:1.5px solid var(--leaf);border-radius:16px;padding:18px 20px}
-.vote-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px 24px;flex-wrap:wrap}
-.vote-head h2{color:var(--leaf);font-size:26px}
-.vote-head p{margin:4px 0 0;color:var(--muted);max-width:60ch;font-size:14px}
-.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:3px 10px;border-radius:99px;background:var(--leaf-soft);color:var(--leaf)}
-.pill.closed{background:var(--line);color:var(--muted)}
-.pill .dot{width:7px;height:7px;border-radius:50%;background:currentColor}
-.vgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
-.vcard{border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:6px;min-width:0}
-.vcard .code{align-self:flex-start}
-.vbtn{all:unset;box-sizing:border-box;position:relative;display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:9px;border:1.5px solid var(--line);cursor:pointer;overflow:hidden;font-size:14.5px;min-width:0}
-.vbtn:hover{border-color:var(--leaf)}
-.vbtn:focus-visible{outline:2px solid var(--leaf);outline-offset:2px}
-.vbtn[disabled]{cursor:default}
-.vbtn[disabled]:hover{border-color:var(--line)}
-.vbtn .fill{position:absolute;inset:0 auto 0 0;background:var(--leaf-soft);z-index:0;transition:width .3s}
-.vbtn>*:not(.fill){position:relative;z-index:1}
-.vbtn .nm{font-weight:500}
-.vbtn .cnt{font-family:var(--mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;flex:none}
-.vbtn.mine{border-color:var(--leaf);font-weight:700}
-.vbtn.mine .nm::after{content:" · your pick";font-weight:500;font-size:12px;color:var(--leaf)}
-.vbtn .seed{background:var(--leaf-soft);color:var(--leaf)}
-.admin{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;padding:12px 14px;border-radius:12px;background:var(--corn-soft);border:1px dashed var(--corn)}
-.admin .lbl{font-size:13px;flex:1;min-width:200px}
-.admin .lbl b{color:var(--ink)}
-.btn{all:unset;box-sizing:border-box;cursor:pointer;font-weight:700;font-size:14px;padding:9px 16px;border-radius:10px;background:var(--leaf);color:var(--surface);text-align:center}
-.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
-.btn.warn{background:var(--beet)}
-.btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
-.btn[disabled]{opacity:.5;cursor:default}
-.notice{font-size:13px;color:var(--muted)}
-.notice.err{color:var(--beet)}
-.slot.editable{cursor:pointer}
-.slot.editable:hover{background:var(--soft)}
-.match.polled{box-shadow:0 0 0 3px var(--leaf-soft)}
-.tally{font-family:var(--mono);font-size:10px;color:var(--muted);flex:none}
-@media (prefers-reduced-motion: reduce){.bar>i,.vbtn .fill{transition:none}}
+.state{padding:40px 22px;color:var(--muted);text-align:center;align-items:center}
+.state strong{display:block;color:var(--ink);font-size:17px}
+
+/* match dialog */
+dialog{border:none;border-radius:18px;padding:0;background:var(--surface);color:var(--ink);width:min(460px,calc(100vw - 32px));box-shadow:0 20px 60px rgba(0,0,0,.25)}
+dialog::backdrop{background:rgba(16,22,15,.45)}
+.dlg{display:flex;flex-direction:column;gap:14px;padding:20px}
+.dlg-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.dlg-head h2{font-size:24px}
+.xbtn{all:unset;cursor:pointer;width:32px;height:32px;display:grid;place-items:center;border-radius:8px;font-size:20px;color:var(--muted)}
+.xbtn:hover{background:var(--line)}
+.xbtn:focus-visible{outline:2px solid var(--leaf)}
+.res{display:flex;flex-direction:column;gap:10px}
+.rrow{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center}
+.rrow .nm{font-weight:500;white-space:normal}
+.rrow.win .nm{font-weight:700}
+.rrow .pct{font-family:var(--mono);font-size:12px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+.rbar{grid-column:2/4;height:8px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:-4px}
+.rbar>i{display:block;height:100%;background:var(--muted)}
+.rrow.win+.rbar>i,.rbar.win>i{background:var(--leaf)}
+.flag{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:var(--leaf-soft);color:var(--leaf);margin-left:6px;vertical-align:middle}
+.dlg .admin{flex-direction:column;align-items:stretch}
+.dlg .row{display:flex;gap:8px;flex-wrap:wrap}
+footer{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:16px}
+@media (max-width:520px){.duel{grid-template-columns:1fr;}.vs{justify-self:center;font-size:22px}}
+@media (prefers-reduced-motion: reduce){.bar>i{transition:none}.pill.on .dot{animation:none}.pick{transition:none}.pick:hover:not([disabled]){transform:none}}
 </style>
 </head>
 <body>
@@ -121,11 +161,11 @@ h2{font-family:var(--display);font-weight:400;font-size:28px;margin:0;line-heigh
     <p class="sub">32 vegetables, 1v1, double elimination. Lose once and you drop to the losers bracket; lose twice and you're compost.</p>
   </header>
 
-  <div id="voteArea"></div>
+  <div id="stage"></div>
 
-  <div class="summary" id="summary">
-    <div class="panel"><span class="eyebrow">Progress</span><span class="big" id="prog">0 / 62</span><div class="bar"><i id="progbar" style="width:0%"></i></div><span class="bk-note" id="stage">Waiting for the bracket to load</span></div>
-    <div class="panel"><span class="eyebrow">Up next</span><ul class="next" id="next"><li><span class="bk-note">Loading matches</span></li></ul></div>
+  <div class="summary">
+    <div class="panel"><span class="eyebrow">Progress</span><span class="big" id="prog">0 / 62</span><div class="bar"><i id="progbar" style="width:0%"></i></div><span class="bk-note" id="stageNote">Loading</span></div>
+    <div class="panel"><span class="eyebrow">Last result</span><div id="last" class="bk-note">No duels decided yet</div></div>
     <div class="panel"><span class="eyebrow">Champion</span><span class="big champ" id="champ">To be decided</span><span class="bk-note" id="champnote">Crowned after the grand final</span></div>
   </div>
 
@@ -133,31 +173,34 @@ h2{font-family:var(--display);font-weight:400;font-size:28px;margin:0;line-heigh
     <span><i style="background:var(--leaf)"></i>Winners bracket</span>
     <span><i style="background:var(--beet)"></i>Losers bracket</span>
     <span><i style="background:var(--corn)"></i>Grand final</span>
-    <span>Highlighted border = ready to play</span>
+    <span>Click any duel to see its result</span>
   </div>
 
-  <div id="main">
-    <div class="panel state" id="state"><strong>Loading the bracket</strong>Fetching the seedings and results.</div>
-  </div>
-  <footer style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:16px">
-    <span class="notice">Anyone with the link can vote, once per device. Results update live.</span>
+  <div id="main"><div class="panel state"><strong>Loading the bracket</strong></div></div>
+
+  <footer>
+    <span class="notice">Anyone with the link can vote, once per device. Results are revealed when a vote closes.</span>
     <span id="authBox" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"></span>
   </footer>
 </div>
+
+<dialog id="dlg" aria-labelledby="dlgTitle"><div class="dlg" id="dlgBody"></div></dialog>
 
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {getAuth,signInAnonymously,onAuthStateChanged,GoogleAuthProvider,signInWithPopup,signOut} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {getFirestore,doc,setDoc,onSnapshot,collection} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import {firebaseConfig,ADMIN_EMAILS,DEFAULT_ENTRANTS,TOURNAMENT_NAME} from "./config.js";
+import * as CFG from "./config.js";
+const firebaseConfig=CFG.firebaseConfig, ADMIN_EMAILS=CFG.ADMIN_EMAILS||[], DEFAULT_ENTRANTS=CFG.DEFAULT_ENTRANTS||[], TOURNAMENT_NAME=CFG.TOURNAMENT_NAME||"Vegetable Championship", IMAGES=CFG.IMAGES||{};
 
+/* ---------- bracket structure ---------- */
 const ORDER=[1,32,16,17,8,25,9,24,4,29,13,20,5,28,12,21,2,31,15,18,7,26,10,23,3,30,14,19,6,27,11,22];
 const ROUNDS={
   W:[["W1","Round of 32"],["W2","Round of 16"],["W3","Quarterfinals"],["W4","Semifinals"],["W5","Winners final"]],
   L:[["L1","Losers R1"],["L2","Losers R2"],["L3","Losers R3"],["L4","Losers R4"],["L5","Losers R5"],["L6","Losers R6"],["L7","Losers semi"],["L8","Losers final"]]
 };
-const MATCHES={}, BYROUND={};
-function add(id,round,a,b){MATCHES[id]={id,round,src:[a,b]};(BYROUND[round]=BYROUND[round]||[]).push(id)}
+const MATCHES={}, BYROUND={}, SEQ=[];
+function add(id,round,a,b){MATCHES[id]={id,round,src:[a,b]};(BYROUND[round]=BYROUND[round]||[]).push(id);SEQ.push(id)}
 for(let i=1;i<=16;i++) add(`W1-${i}`,"W1",{seed:ORDER[2*i-2]},{seed:ORDER[2*i-1]});
 for(let r=2;r<=5;r++) for(let j=1;j<=16>>(r-1);j++) add(`W${r}-${j}`,`W${r}`,{w:`W${r-1}-${2*j-1}`},{w:`W${r-1}-${2*j}`});
 for(let i=1;i<=8;i++) add(`L1-${i}`,"L1",{l:`W1-${2*i-1}`},{l:`W1-${2*i}`});
@@ -171,11 +214,14 @@ add("L8-1","L8",{w:"L7-1"},{l:"W5-1"});
 add("GF-1","GF",{w:"W5-1"},{w:"L8-1"});
 add("GF-2","GF",{gf:0},{gf:1});
 const ROUND_LABEL=Object.fromEntries([...ROUNDS.W,...ROUNDS.L,["GF","Grand final"]]);
+const label=id=>id==="GF-2"?"Bracket reset":ROUND_LABEL[MATCHES[id].round];
 
-let mainDoc={}, entrants=[], results={}, tally={}, poll={open:false,matches:[]};
-let votes={};            // uid -> picks {matchId: name}
-let db=null, me=null, isEditor=false, canVote=null, busy=false, confirmClose=false, notice="", noticeErr=false;
+/* ---------- state ---------- */
+let mainDoc={}, entrants=[], results={}, tally={}, poll={open:false,match:null}, lastDecided=null;
+let myPicks={}, allVotes={}, votesLoaded=false;
+let fs=null, auth=null, me=null, isEditor=false, busy=false, confirmClose=false, notice="", noticeErr=false, openDlg=null;
 const memo={};
+
 function players(id){
   if(memo[id]) return memo[id];
   const m=MATCHES[id];
@@ -187,138 +233,129 @@ function players(id){
   });
   return memo[id]=ps;
 }
-function decided(id){const ps=players(id),r=results[id];if(!ps[0]||!ps[1]||!r)return -1;return ps.findIndex(p=>p.name.toLowerCase()===String(r).toLowerCase())}
+function decided(id){const ps=players(id),r=results[id];if(!ps[0]||!ps[1]||!r)return -1;return ps.findIndex(p=>p.name===r)}
 function winnerOf(id){const k=decided(id);return k<0?null:players(id)[k]}
 function loserOf(id){const k=decided(id);return k<0?null:players(id)[1-k]}
 function gf2Needed(){const w=winnerOf("GF-1");if(!w)return null;return w.name===players("GF-1")[1].name}
-function readyMatches(){const need=gf2Needed();return Object.keys(MATCHES).filter(id=>{const p=players(id);return p[0]&&p[1]&&decided(id)<0&&!(id==="GF-2"&&need!==true)})}
+function relevant(id){return !(id==="GF-2"&&gf2Needed()!==true)}
+function readyMatches(){return SEQ.filter(id=>{const p=players(id);return p[0]&&p[1]&&decided(id)<0&&relevant(id)})}
 function placeholder(s){
   if(s.seed) return "TBD";
   if(s.w) return s.w==="W5-1"?"Winners bracket champ":s.w==="L8-1"?"Losers bracket champ":`Winner of ${s.w}`;
   if(s.l) return `Loser of ${s.l}`;
   return s.gf===0?"Winners bracket champ":"Losers bracket champ";
 }
-const esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const inPoll=id=>poll.open&&poll.matches.includes(id);
-function countVotes(id){
+const esc=t=>String(t).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const slug=n=>String(n).toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+function icon(name,size){
+  if(!name) return `<span class="ico ${size}"></span>`;
+  const src=IMAGES[name]||`images/${slug(name)}.svg`;
+  return `<span class="ico ${size}"><img src="${esc(src)}" alt="" loading="lazy" onerror="this.remove()"></span>`;
+}
+function countsFor(id){
   const ps=players(id),c=[0,0];
-  if(!ps[0]||!ps[1]) return c;
-  for(const uid in votes){const pick=votes[uid]&&votes[uid][id];if(pick===ps[0].name)c[0]++;else if(pick===ps[1].name)c[1]++}
+  for(const uid in allVotes){const pick=allVotes[uid]&&allVotes[uid][id];if(pick===ps[0].name)c[0]++;else if(pick===ps[1].name)c[1]++}
   return c;
 }
-function roundsIn(ids){return [...new Set(ids.map(id=>ROUND_LABEL[MATCHES[id].round]))].join(", ")}
+function voterCount(id){let n=0;for(const uid in allVotes) if(allVotes[uid]&&allVotes[uid][id]) n++;return n}
 
-function matchHTML(id){
-  const m=MATCHES[id],ps=players(id),k=decided(id);
-  const ready=ps[0]&&ps[1]&&k<0, polled=inPoll(id);
-  const editable=isEditor&&ps[0]&&ps[1]&&!polled;
-  const t=tally[id];
-  const slots=ps.map((p,i)=>{
-    if(!p) return `<div class="slot tbd"><span class="seed"></span><span class="nm">${esc(placeholder(m.src[i]))}</span></div>`;
-    const cls=k<0?"":(k===i?"win":"lose");
-    const tv=t&&t[p.name]!=null?`<span class="tally">${t[p.name]}v</span>`:"";
-    const attrs=editable?` editable" role="button" tabindex="0" data-set="${esc(p.name)}" data-match="${id}" title="Set ${esc(p.name)} as winner of ${id}`:`" title="${esc(p.name)}`;
-    return `<div class="slot ${cls}${attrs}"><span class="seed">${p.seed}</span><span class="nm">${esc(p.name)}</span>${tv}</div>`;
-  }).join("");
-  return `<div class="match${ready?" ready":""}${polled?" polled":""}" data-id="${id}">${slots}</div>`;
-}
-function bracketHTML(kind){
-  return `<div class="bracket" data-kind="${kind}"><svg class="wires"></svg>`+ROUNDS[kind].map(([r,label])=>
-    `<div class="round"><div class="round-name">${label}</div><div class="matches">${BYROUND[r].map(matchHTML).join("")}</div></div>`).join("")+`</div>`;
-}
-
-function renderVote(){
-  const el=document.getElementById("voteArea");
+/* ---------- stage (the open duel) ---------- */
+function renderStage(){
+  const el=document.getElementById("stage");
   if(!entrants.length){el.innerHTML="";return}
-  const ready=readyMatches();
-  const voters=Object.keys(votes).filter(uid=>poll.matches.some(id=>votes[uid]&&votes[uid][id])).length;
-  let adminHTML="";
-  if(isEditor){
-    if(poll.open){
-      adminHTML=`<div class="admin"><span class="lbl"><b>You're running this vote.</b> ${voters} ${voters===1?"person has":"people have"} voted so far. Closing applies the majority result to each match; ties stay open for you to decide.</span>
-        ${confirmClose?`<button class="btn ghost" id="cancelClose">Keep voting</button><button class="btn warn" id="doClose" ${busy?"disabled":""}>Confirm: close and advance</button>`:`<button class="btn warn" id="askClose" ${busy?"disabled":""}>Close voting</button>`}</div>`;
-    } else if(ready.length){
-      adminHTML=`<div class="admin"><span class="lbl"><b>${ready.length} ${ready.length===1?"match is":"matches are"} ready</b> (${esc(roundsIn(ready))}). Open voting to let everyone with access pick winners. You can also click a vegetable in the bracket to decide a match yourself.</span><button class="btn" id="openVote" ${busy?"disabled":""}>Open voting</button></div>`;
-    }
-  }
   const noticeHTML=notice?`<span class="notice${noticeErr?" err":""}">${esc(notice)}</span>`:"";
-  if(!poll.open){
-    el.innerHTML=adminHTML||noticeHTML?`<section class="vote" style="border-color:var(--line)"><div class="vote-head"><div><span class="pill closed"><span class="dot"></span>Voting closed</span><p>${tally&&Object.keys(tally).length?"The last vote has been applied to the bracket. Check back when the next round opens.":"Voting hasn't started yet. Check back when the first round opens."}</p></div></div>${adminHTML}${noticeHTML}</section>`
-      :`<section class="vote" style="border-color:var(--line)"><div class="vote-head"><div><span class="pill closed"><span class="dot"></span>Voting closed</span><p>The next round opens soon. Results appear in the bracket below.</p></div></div></section>`;
-    bindAdmin();return;
+  if(poll.open&&poll.match&&MATCHES[poll.match]){
+    const id=poll.match, ps=players(id);
+    if(!ps[0]||!ps[1]){el.innerHTML="";return}
+    const mine=myPicks[id];
+    const pick=i=>{const p=ps[i];return `<button class="pick${mine===p.name?" mine":""}" data-vote="${esc(p.name)}" ${(!me||busy)?"disabled":""}>${icon(p.name,"l")}<span class="nm">${esc(p.name)}</span><span class="meta">${mine===p.name?"Your pick":`Seed ${p.seed}`}</span></button>`};
+    const n=voterCount(id);
+    const admin=isEditor?`<div class="admin"><span class="lbl"><b>You're running this vote.</b> ${votesLoaded?`${n} ${n===1?"vote":"votes"} in so far.`:"Counting votes…"} Only you see this count. A tie is decided by a random draw.</span>
+      ${confirmClose?`<button class="btn ghost" id="cancelClose">Keep voting</button><button class="btn warn" id="doClose" ${busy||!votesLoaded?"disabled":""}>Confirm: close and reveal</button>`:`<button class="btn warn" id="askClose" ${busy?"disabled":""}>Close vote</button>`}</div>`:"";
+    el.innerHTML=`<section class="stage live"><div class="stage-head"><div><span class="pill on"><span class="dot"></span>Voting open</span><h2 style="margin-top:10px">${esc(label(id))} · <span class="code" style="font-size:14px">${id}</span></h2>
+      <p>${!me?"Connecting so you can vote…":mine?"Vote counted. You can change your pick until the vote closes. Results are revealed when it does.":"Tap the vegetable you want to win. Results stay hidden until the vote closes."}</p></div></div>
+      <div class="duel">${pick(0)}<span class="vs">vs</span>${pick(1)}</div>${admin}${noticeHTML}</section>`;
+    el.querySelectorAll("[data-vote]").forEach(b=>b.addEventListener("click",()=>castVote(id,b.dataset.vote)));
+  } else {
+    const ready=readyMatches();
+    let admin="";
+    if(isEditor&&ready.length){
+      admin=`<div class="admin" style="flex-direction:column;align-items:stretch"><span class="lbl"><b>Pick the next duel to open.</b> ${ready.length} ${ready.length===1?"duel is":"duels are"} ready. You can also click any duel in the bracket.</span>
+        <div class="queue">${ready.map(id=>{const p=players(id);return `<div class="qcard"><span class="qicons">${icon(p[0].name,"m")}${icon(p[1].name,"m")}</span><span class="who"><span>${esc(p[0].name)} vs ${esc(p[1].name)}</span><span class="code">${id} · ${esc(label(id))}</span></span><button class="btn small" data-open="${id}" ${busy?"disabled":""}>Open vote</button></div>`}).join("")}</div></div>`;
+    }
+    const done=!ready.length&&champion();
+    el.innerHTML=`<section class="stage"><div class="stage-head"><div><span class="pill"><span class="dot"></span>${done?"Tournament over":"No vote open"}</span><p>${done?"The champion has been crowned. Thanks for voting.":"The next duel opens soon. Keep this page open; it updates by itself."}</p></div></div>${admin}${noticeHTML}</section>`;
+    el.querySelectorAll("[data-open]").forEach(b=>b.addEventListener("click",()=>openVote(b.dataset.open)));
   }
-  const mine=(me&&votes[me])||{};
-  const done=poll.matches.filter(id=>mine[id]).length;
-  const voteNote=!me?"Connecting so you can vote…":canVote===false?"Your vote couldn't be saved. Reload the page and try again.":`You've picked ${done} of ${poll.matches.length}. Tap a vegetable to vote; you can change your pick until voting closes.`;
-  const cards=poll.matches.map(id=>{
-    const ps=players(id);if(!ps[0]||!ps[1]) return "";
-    const c=countVotes(id),tot=c[0]+c[1];
-    const btn=i=>{const p=ps[i],pct=tot?Math.round(c[i]/tot*100):0;
-      return `<button class="vbtn${mine[id]===p.name?" mine":""}" data-vote="${id}" data-name="${esc(p.name)}" ${(!me||canVote===false||busy)?"disabled":""}><span class="fill" style="width:${pct}%"></span><span class="seed">${p.seed}</span><span class="nm">${esc(p.name)}</span><span class="cnt">${c[i]}</span></button>`};
-    return `<div class="vcard"><span class="code">${id} · ${esc(ROUND_LABEL[MATCHES[id].round])}</span>${btn(0)}${btn(1)}</div>`;
-  }).join("");
-  el.innerHTML=`<section class="vote"><div class="vote-head"><div><span class="pill"><span class="dot"></span>Voting open</span><h2 style="margin-top:8px">${esc(roundsIn(poll.matches))}</h2><p>${esc(voteNote)}</p></div><span class="notice">${voters} ${voters===1?"voter":"voters"} so far</span></div>${adminHTML}${noticeHTML}<div class="vgrid">${cards}</div></section>`;
-  el.querySelectorAll("[data-vote]").forEach(b=>b.addEventListener("click",()=>castVote(b.dataset.vote,b.dataset.name)));
-  bindAdmin();
-}
-function bindAdmin(){
   const q=id=>document.getElementById(id);
-  q("openVote")?.addEventListener("click",openVote);
-  q("askClose")?.addEventListener("click",()=>{confirmClose=true;renderVote()});
-  q("cancelClose")?.addEventListener("click",()=>{confirmClose=false;renderVote()});
+  q("askClose")?.addEventListener("click",()=>{confirmClose=true;renderStage()});
+  q("cancelClose")?.addEventListener("click",()=>{confirmClose=false;renderStage()});
   q("doClose")?.addEventListener("click",closeVote);
 }
 
+/* ---------- bracket ---------- */
+function champion(){const need=gf2Needed();return need===false?winnerOf("GF-1"):need===true?winnerOf("GF-2"):null}
+function matchHTML(id){
+  const m=MATCHES[id],ps=players(id),k=decided(id);
+  const voting=poll.open&&poll.match===id, ready=ps[0]&&ps[1]&&k<0&&!voting;
+  const slots=ps.map((p,i)=>{
+    if(!p) return `<div class="slot tbd"><span class="seed"></span><span class="ico s"></span><span class="nm">${esc(placeholder(m.src[i]))}</span></div>`;
+    const cls=k<0?"":(k===i?"win":"lose");
+    return `<div class="slot ${cls}"><span class="seed">${p.seed}</span>${icon(p.name,"s")}<span class="nm" title="${esc(p.name)}">${esc(p.name)}</span></div>`;
+  }).join("");
+  return `<div class="match${ready?" ready":""}${voting?" voting":""}" data-id="${id}" role="button" tabindex="0" aria-label="${id}: ${ps.map((p,i)=>p?p.name:placeholder(m.src[i])).join(" vs ")}">${slots}</div>`;
+}
+function bracketHTML(kind){
+  return `<div class="bracket" data-kind="${kind}"><svg class="wires" aria-hidden="true"></svg>`+ROUNDS[kind].map(([r,lab])=>
+    `<div class="round"><div class="round-name">${lab}</div><div class="matches">${BYROUND[r].map(matchHTML).join("")}</div></div>`).join("")+`</div>`;
+}
 function render(){
   for(const k in memo) delete memo[k];
+  renderStage();
   const main=document.getElementById("main");
-  renderVote();
   if(!entrants.length){
-    main.innerHTML=`<div class="panel state"><strong>No vegetables seeded yet</strong>${isEditor?`<p>Create the bracket with the 32 default vegetables from config.js.</p><button class="btn" id="setup">Set up bracket</button>`:"The organizer hasn't set up the bracket yet."}</div>`;
+    main.innerHTML=`<div class="panel state"><strong>No vegetables seeded yet</strong>${isEditor?`<p>Create the bracket with the 32 vegetables from config.js.</p><button class="btn" id="setup">Set up bracket</button>`:"<p>The organizer hasn't set up the bracket yet.</p>"}</div>`;
     document.getElementById("setup")?.addEventListener("click",setupBracket);
+    document.getElementById("stageNote").textContent="Not set up yet";
     return;
   }
-  const need=gf2Needed();
-  const gf2=need===false?`<div class="match"><div class="slot tbd"><span class="seed"></span><span class="nm">Not needed</span></div><div class="slot tbd"><span class="seed"></span><span class="nm">Winners champ won GF-1</span></div></div>`:matchHTML("GF-2");
-  let champ=null;
-  if(need===false) champ=winnerOf("GF-1"); else if(need===true) champ=winnerOf("GF-2");
-  main.innerHTML=`
-  <div style="display:flex;flex-direction:column;gap:36px">
+  const need=gf2Needed(), champ=champion();
+  const gf2=need===false?`<div class="match" style="cursor:default"><div class="slot tbd"><span class="seed"></span><span class="ico s"></span><span class="nm">Not needed</span></div><div class="slot tbd"><span class="seed"></span><span class="ico s"></span><span class="nm">Winners champ won GF-1</span></div></div>`:matchHTML("GF-2");
+  main.innerHTML=`<div style="display:flex;flex-direction:column;gap:32px">
   <section class="bk bk-W"><div class="bk-head"><h2>Winners bracket</h2><span class="bk-note">Undefeated vegetables. Losers drop into the losers bracket.</span></div><div class="scroller">${bracketHTML("W")}</div></section>
   <section class="bk bk-L"><div class="bk-head"><h2>Losers bracket</h2><span class="bk-note">One loss so far. Another loss means elimination.</span></div><div class="scroller">${bracketHTML("L")}</div></section>
-  <section class="bk bk-F"><div class="bk-head"><h2>Grand final</h2><span class="bk-note">If the losers bracket champ wins the first final, a reset match decides it.</span></div>
+  <section class="bk bk-F"><div class="bk-head"><h2>Grand final</h2><span class="bk-note">If the losers bracket champ wins the first final, a reset duel decides it.</span></div>
     <div class="scroller"><div class="finals">
       <div class="round"><div class="round-name">Grand final</div>${matchHTML("GF-1")}</div>
       <div class="round"><div class="round-name">Bracket reset</div>${gf2}</div>
-      <div class="trophy"><span class="eyebrow">Champion</span><span class="big">${champ?esc(champ.name):"To be decided"}</span></div>
-    </div></div></section>
-  </div>`;
-  main.querySelectorAll("[data-set]").forEach(s=>{
-    const go=()=>setWinner(s.dataset.match,s.dataset.set);
-    s.addEventListener("click",go);
-    s.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go()}});
+      <div class="trophy">${champ?icon(champ.name,"m"):""}<div><span class="eyebrow">Champion</span><div class="big">${champ?esc(champ.name):"To be decided"}</div></div></div>
+    </div></div></section></div>`;
+  main.querySelectorAll(".match[data-id]").forEach(el=>{
+    const go=()=>showMatch(el.dataset.id);
+    el.addEventListener("click",go);
+    el.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go()}});
   });
   const total=need===true?63:62;
-  const played=Object.keys(MATCHES).filter(id=>decided(id)>=0&&!(id==="GF-2"&&need!==true)).length;
+  const played=SEQ.filter(id=>decided(id)>=0&&relevant(id)).length;
   document.getElementById("prog").textContent=`${played} / ${total}`;
   document.getElementById("progbar").style.width=`${Math.round(played/total*100)}%`;
-  const ready=readyMatches();
-  document.getElementById("stage").textContent=champ?"Tournament complete":poll.open?`Voting on: ${roundsIn(poll.matches)}`:ready.length?`Ready: ${roundsIn(ready)}`:"Waiting on results";
-  document.getElementById("next").innerHTML=ready.length?ready.slice(0,5).map(id=>{const p=players(id);return `<li><span class="code">${id}</span><span>${esc(p[0].name)} vs ${esc(p[1].name)}</span></li>`}).join("")+(ready.length>5?`<li><span class="bk-note">and ${ready.length-5} more ready to play</span></li>`:""):`<li><span class="bk-note">${champ?"All matches played":"Nothing ready yet"}</span></li>`;
-  document.getElementById("champ").textContent=champ?champ.name:"To be decided";
+  document.getElementById("stageNote").textContent=champ?"Tournament complete":poll.open&&poll.match?`Voting on ${poll.match}`:`${readyMatches().length} duels ready`;
+  const ld=lastDecided&&decided(lastDecided)>=0?lastDecided:null;
+  document.getElementById("last").innerHTML=ld?(()=>{const w=winnerOf(ld),l=loserOf(ld),t=tally[ld];return `<div style="display:flex;align-items:center;gap:10px">${icon(w.name,"m")}<div><b style="color:var(--ink)">${esc(w.name)}</b> beat ${esc(l.name)}<div class="code">${ld} · ${esc(label(ld))}${t?` · ${t.counts[w.name]||0}–${t.counts[l.name]||0}${t.random?" · tie, drawn at random":""}`:""}</div></div></div>`})():"No duels decided yet";
+  document.getElementById("champ").innerHTML=champ?`${icon(champ.name,"m")}${esc(champ.name)}`:"To be decided";
   document.getElementById("champnote").textContent=champ?`Seed ${champ.seed}, champion of all vegetables`:"Crowned after the grand final";
   requestAnimationFrame(drawWires);
+  if(openDlg) showMatch(openDlg,true);
 }
 function drawWires(){
   document.querySelectorAll(".bracket").forEach(b=>{
     const svg=b.querySelector("svg.wires"),br=b.getBoundingClientRect();let d="",live="";
-    b.querySelectorAll(".match").forEach(el=>{
-      const m=MATCHES[el.dataset.id];
-      m.src.forEach((s,i)=>{
+    b.querySelectorAll(".match[data-id]").forEach(el=>{
+      MATCHES[el.dataset.id].src.forEach((s,i)=>{
         if(!s.w) return;
         const from=b.querySelector(`.match[data-id="${s.w}"]`); if(!from) return;
         const a=from.getBoundingClientRect(),t=el.getBoundingClientRect();
-        const x1=a.right-br.left,y1=a.top+a.height/2-br.top,x2=t.left-br.left,y2=t.top-br.top+(i===0?t.height*0.27:t.height*0.73),mx=(x1+x2)/2;
+        const x1=a.right-br.left,y1=a.top+a.height/2-br.top,x2=t.left-br.left,y2=t.top-br.top+(i===0?t.height*.27:t.height*.73),mx=(x1+x2)/2;
         const p=`M${x1} ${y1}H${mx}V${y2}H${x2}`;
         if(winnerOf(s.w)) live+=p; else d+=p;
       });
@@ -327,108 +364,151 @@ function drawWires(){
   });
 }
 addEventListener("resize",()=>requestAnimationFrame(drawWires));
-if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>requestAnimationFrame(drawWires));
+document.fonts?.ready.then(()=>requestAnimationFrame(drawWires));
 
+/* ---------- match dialog ---------- */
+const dlg=document.getElementById("dlg");
+dlg.addEventListener("close",()=>{openDlg=null});
+dlg.addEventListener("click",e=>{if(e.target===dlg) dlg.close()});
+function showMatch(id,refresh){
+  const m=MATCHES[id],ps=players(id),k=decided(id),t=tally[id],voting=poll.open&&poll.match===id;
+  let body="";
+  if(k>=0&&t){
+    const c=ps.map(p=>t.counts[p.name]||0),tot=c[0]+c[1];
+    body=`<div class="res">${ps.map((p,i)=>{const pct=tot?Math.round(c[i]/tot*100):0;return `<div class="rrow${k===i?" win":""}">${icon(p.name,"m")}<span class="nm">${esc(p.name)}${k===i?'<span class="flag">Winner</span>':""}</span><span class="pct">${c[i]} · ${pct}%</span></div><div class="rbar${k===i?" win":""}"><i style="width:${pct}%"></i></div>`}).join("")}</div>
+      <span class="notice">${tot} ${tot===1?"vote":"votes"} cast.${t.random?" It was a tie, so the winner was drawn at random.":""}${t.override?" The organizer later changed the result by hand.":""}</span>`;
+  } else if(k>=0){
+    body=`<div class="res">${ps.map((p,i)=>`<div class="rrow${k===i?" win":""}">${icon(p.name,"m")}<span class="nm">${esc(p.name)}${k===i?'<span class="flag">Winner</span>':""}</span><span></span></div>`).join("")}</div><span class="notice">Result set by the organizer without a vote.</span>`;
+  } else {
+    body=`<div class="res">${ps.map((p,i)=>`<div class="rrow">${icon(p&&p.name,"m")}<span class="nm"${p?"":' style="color:var(--muted);font-style:italic"'}>${esc(p?p.name:placeholder(m.src[i]))}</span><span></span></div>`).join("")}</div>
+      <span class="notice">${voting?"Voting is open on this duel. Results are revealed when the vote closes.":ps[0]&&ps[1]?"Ready to play. Waiting for the organizer to open the vote.":"Waiting for earlier duels to finish."}</span>`;
+  }
+  let admin="";
+  if(isEditor&&ps[0]&&ps[1]&&!voting&&relevant(id)){
+    admin=`<div class="admin"><span class="lbl"><b>Organizer</b></span>
+      ${k<0?`<button class="btn" data-a="open" ${busy||poll.open?"disabled":""}>Open vote on this duel</button>${poll.open?'<span class="notice">Close the current vote first.</span>':""}`:""}
+      <div class="row"><span class="notice" style="width:100%">Set the winner by hand:</span>${ps.map(p=>`<button class="btn ghost small" data-a="set" data-n="${esc(p.name)}" ${busy?"disabled":""}>${esc(p.name)}</button>`).join("")}${k>=0?`<button class="btn ghost small" data-a="clear" ${busy?"disabled":""}>Clear result</button>`:""}</div></div>`;
+  }
+  document.getElementById("dlgBody").innerHTML=`<div class="dlg-head"><div><span class="code">${id}</span><h2 id="dlgTitle">${esc(label(id))}</h2></div><button class="xbtn" id="dlgX" aria-label="Close">×</button></div>${body}${admin}`;
+  document.getElementById("dlgX").onclick=()=>dlg.close();
+  dlg.querySelectorAll("[data-a]").forEach(b=>b.addEventListener("click",()=>{
+    const a=b.dataset.a;
+    if(a==="open"){dlg.close();openVote(id)}
+    else if(a==="set") setWinner(id,b.dataset.n);
+    else if(a==="clear") setWinner(id,null);
+  }));
+  openDlg=id;
+  if(!refresh&&!dlg.open) dlg.showModal();
+}
 
-// ---- writes ----
-function say(msg,err){notice=msg;noticeErr=!!err;renderVote()}
+/* ---------- writes ---------- */
 async function writeMain(next,okMsg){
-  if(busy) return; busy=true; renderVote();
+  if(busy) return; busy=true; renderStage();
   try{await setDoc(doc(fs,"tournament","main"),next);notice=okMsg||"";noticeErr=false}
-  catch(e){notice=e&&e.code==="permission-denied"?"Only the organizer can change the bracket. Sign in with the organizer account.":"That change didn't save. Check your connection and try again.";noticeErr=true}
+  catch(e){notice=e&&e.code==="permission-denied"?"Only the organizer account can change the bracket.":"That change didn't save. Check your connection and try again.";noticeErr=true}
   busy=false;confirmClose=false;render();
 }
-function baseDoc(){return JSON.parse(JSON.stringify(mainDoc))}
+const baseDoc=()=>JSON.parse(JSON.stringify(mainDoc));
 function setupBracket(){
-  writeMain({name:TOURNAMENT_NAME,entrants:DEFAULT_ENTRANTS.slice(0,32),results:{},tally:{},poll:{open:false,matches:[]}},"Bracket created. Open voting when you're ready.");
+  writeMain({name:TOURNAMENT_NAME,entrants:DEFAULT_ENTRANTS.slice(0,32),results:{},tally:{},poll:{open:false,match:null},last:null},"Bracket created. Pick the first duel to open.");
 }
-function openVote(){
-  const ready=readyMatches(); if(!ready.length) return;
-  const d=baseDoc(); d.poll={open:true,matches:ready,openedAt:new Date().toISOString()};
-  writeMain(d,`Voting is open on ${ready.length} ${ready.length===1?"match":"matches"}.`);
+function openVote(id){
+  const p=players(id); if(!p[0]||!p[1]||decided(id)>=0||poll.open) return;
+  const d=baseDoc(); d.poll={open:true,match:id,openedAt:new Date().toISOString()};
+  writeMain(d,`Voting is open: ${p[0].name} vs ${p[1].name}.`);
 }
 function closeVote(){
+  const id=poll.match, ps=players(id); if(!id||!ps[0]||!ps[1]||!votesLoaded) return;
+  const c=countsFor(id), random=c[0]===c[1];
+  const k=random?(crypto.getRandomValues(new Uint32Array(1))[0]%2):(c[0]>c[1]?0:1);
   const d=baseDoc(); d.results=d.results||{}; d.tally=d.tally||{};
-  const ties=[];
-  for(const id of poll.matches){
-    const ps=players(id); if(!ps[0]||!ps[1]) continue;
-    const c=countVotes(id);
-    d.tally[id]={[ps[0].name]:c[0],[ps[1].name]:c[1]};
-    if(c[0]===c[1]) ties.push(id); else d.results[id]=c[0]>c[1]?ps[0].name:ps[1].name;
-  }
-  d.poll={open:false,matches:[],closedAt:new Date().toISOString()};
-  writeMain(d,ties.length?`Voting closed. ${ties.length} tied ${ties.length===1?"match needs":"matches need"} your call (${ties.join(", ")}): click the winner in the bracket, or open another vote.`:"Voting closed and winners advanced.");
+  d.results[id]=ps[k].name;
+  d.tally[id]={counts:{[ps[0].name]:c[0],[ps[1].name]:c[1]},random};
+  d.poll={open:false,match:null,closedAt:new Date().toISOString()};
+  d.last=id;
+  writeMain(d,random?`It was a ${c[0]}–${c[1]} tie, so ${ps[k].name} was drawn at random and advances.`:`${ps[k].name} wins ${c[k]}–${c[1-k]} and advances.`);
 }
 function setWinner(id,name){
   const d=baseDoc(); d.results=d.results||{};
-  if(d.results[id]===name) delete d.results[id]; else d.results[id]=name;
-  writeMain(d,d.results[id]?`${name} wins ${id}.`:`Cleared the result for ${id}.`);
+  if(name) d.results[id]=name; else delete d.results[id];
+  if(d.tally&&d.tally[id]) d.tally[id].override=true;
+  if(name) d.last=id;
+  writeMain(d,name?`${name} set as winner of ${id}.`:`Cleared the result for ${id}.`);
 }
 let voteWriting=false, pendingPicks=null;
 async function castVote(id,name){
-  if(!me||!poll.open||!poll.matches.includes(id)) return;
-  const picks={...(votes[me]||{})}; picks[id]=name;
-  votes={...votes,[me]:picks}; renderVote();
-  pendingPicks=picks; if(voteWriting) return;
+  if(!me||!poll.open||poll.match!==id) return;
+  myPicks={...myPicks,[id]:name}; if(isEditor) allVotes={...allVotes,[me]:myPicks};
+  renderStage();
+  pendingPicks=myPicks; if(voteWriting) return;
   voteWriting=true;
   while(pendingPicks){
     const p=pendingPicks; pendingPicks=null;
     try{await setDoc(doc(fs,"votes",me),{picks:p})}
-    catch(e){notice=e&&e.code==="permission-denied"?"Voting has closed for this round, so that pick didn't count.":"Your vote didn't save. Check your connection and try again.";noticeErr=true;renderVote();break}
+    catch(e){notice=e&&e.code==="permission-denied"?"This vote has closed, so that pick didn't count.":"Your vote didn't save. Check your connection and try again.";noticeErr=true;renderStage();break}
   }
   voteWriting=false;
 }
 
-// ---- Firebase ----
-const mainEl=document.getElementById("main");
-let fs=null, auth=null;
-function showState(title,body){mainEl.innerHTML=`<div class="panel state"><strong>${title}</strong>${body}</div>`}
+/* ---------- Firebase ---------- */
+function showState(title,bodyTxt){document.getElementById("main").innerHTML=`<div class="panel state"><strong>${title}</strong><p>${bodyTxt}</p></div>`}
+let unsubVotes=null;
+function subscribeVotes(){
+  if(unsubVotes){unsubVotes();unsubVotes=null}
+  votesLoaded=false; allVotes={};
+  if(!me) return;
+  if(isEditor){
+    unsubVotes=onSnapshot(collection(fs,"votes"),qs=>{
+      const v={};qs.docs.forEach(d=>{const b=d.data();if(b&&b.picks&&typeof b.picks==="object")v[d.id]=b.picks});
+      allVotes=v;votesLoaded=true;if(!voteWriting&&v[me])myPicks=v[me];renderStage();
+    },()=>{votesLoaded=false;notice="Couldn't read the votes. Check that the latest firestore.rules are published.";noticeErr=true;renderStage()});
+  } else {
+    unsubVotes=onSnapshot(doc(fs,"votes",me),snap=>{
+      const b=snap.exists()?snap.data():null;
+      if(!voteWriting) myPicks=b&&b.picks&&typeof b.picks==="object"?b.picks:{};
+      renderStage();
+    },()=>{});
+  }
+}
 function updateAuthUI(u){
   const box=document.getElementById("authBox");
   if(u&&!u.isAnonymous){
-    box.innerHTML=`<span class="notice">Signed in as ${esc(u.email||"organizer")}${isEditor?" (organizer)":" (not the organizer account)"}</span><button class="btn ghost" id="signOut">Sign out</button>`;
+    box.innerHTML=`<span class="notice">Signed in as ${esc(u.email||"organizer")}${isEditor?" (organizer)":" (not the organizer account)"}</span><button class="btn ghost small" id="signOut">Sign out</button>`;
     document.getElementById("signOut").onclick=()=>signOut(auth);
   } else {
-    box.innerHTML=`<button class="btn ghost" id="signIn">Organizer sign in</button>`;
-    document.getElementById("signIn").onclick=()=>signInWithPopup(auth,new GoogleAuthProvider()).catch(e=>say("Sign-in didn't complete. If a popup was blocked, allow popups for this site and try again.",true));
+    box.innerHTML=`<button class="btn ghost small" id="signIn">Organizer sign in</button>`;
+    document.getElementById("signIn").onclick=()=>signInWithPopup(auth,new GoogleAuthProvider()).catch(()=>{notice="Sign-in didn't complete. If a popup was blocked, allow popups for this site and try again.";noticeErr=true;renderStage()});
   }
 }
 if(!firebaseConfig||!firebaseConfig.apiKey||String(firebaseConfig.apiKey).startsWith("YOUR")){
   showState("Firebase isn't set up yet","Fill in config.js with your Firebase project settings. The README walks through it.");
-  document.getElementById("stage").textContent="Not configured";
+  document.getElementById("stageNote").textContent="Not configured";
 } else {
   const app=initializeApp(firebaseConfig);
   auth=getAuth(app); fs=getFirestore(app);
   let loaded=false;
   const timer=setTimeout(()=>{if(!loaded)showState("The bracket is taking a while to load","Check your connection and reload the page.")},10000);
   onAuthStateChanged(auth,u=>{
-    if(!u){me=null;isEditor=false;updateAuthUI(null);signInAnonymously(auth).catch(()=>say("Couldn't connect for voting. Reload the page to try again.",true));render();return}
+    if(!u){me=null;isEditor=false;myPicks={};updateAuthUI(null);subscribeVotes();signInAnonymously(auth).catch(()=>{notice="Couldn't connect for voting. Reload the page to try again.";noticeErr=true;renderStage()});if(loaded)render();return}
     me=u.uid;
     isEditor=!u.isAnonymous&&!!u.email&&ADMIN_EMAILS.map(e=>e.toLowerCase()).includes(u.email.toLowerCase());
-    canVote=true;
-    updateAuthUI(u);
-    render();
+    updateAuthUI(u); subscribeVotes();
+    if(loaded) render();
   });
   onSnapshot(doc(fs,"tournament","main"),snap=>{
     loaded=true;clearTimeout(timer);
     mainDoc=snap.exists()?snap.data():{};
     entrants=Array.isArray(mainDoc.entrants)?mainDoc.entrants:[];
     results=mainDoc.results&&typeof mainDoc.results==="object"?mainDoc.results:{};
-    tally=mainDoc.tally&&typeof mainDoc.tally==="object"?mainDoc.tally:{};
+    tally={};const rawT=mainDoc.tally&&typeof mainDoc.tally==="object"?mainDoc.tally:{};for(const k in rawT){const t=rawT[k];tally[k]=t&&t.counts?t:{counts:t||{},random:false}}
     const p=mainDoc.poll||{};
-    poll={open:!!p.open,matches:Array.isArray(p.matches)?p.matches.filter(id=>MATCHES[id]):[]};
+    poll={open:!!p.open&&!!MATCHES[p.match],match:MATCHES[p.match]?p.match:null};
+    lastDecided=MATCHES[mainDoc.last]?mainDoc.last:null;
     if(!poll.open) confirmClose=false;
     if(mainDoc.name){document.getElementById("title").textContent=mainDoc.name;document.title=mainDoc.name}
     render();
   },()=>{loaded=true;clearTimeout(timer);showState("Couldn't load the bracket","Check that the Firestore rules from the README are published, then reload.")});
-  onSnapshot(collection(fs,"votes"),qs=>{
-    const v={};
-    qs.docs.forEach(d=>{const b=d.data();if(b&&b.picks&&typeof b.picks==="object")v[d.id]=b.picks});
-    if(me&&voteWriting&&votes[me]) v[me]=votes[me];
-    votes=v; renderVote();
-  },()=>{});
 }
-
 </script>
 </body>
 </html>

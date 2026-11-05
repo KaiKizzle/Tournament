@@ -23,4 +23,8 @@ export const DEFAULT_ENTRANTS = [
   "Pea", "Celery", "Eggplant", "Pumpkin", "Kale", "Leek", "Asparagus", "Radish",
   "Beetroot", "Brussels Sprout", "Chili Pepper", "Turnip", "Artichoke", "Parsnip", "Okra", "Bok Choy"
 ];
+// 4) Optional: custom images. By default each vegetable uses images/<name>.svg
+//    (e.g. "Bell Pepper" -> images/bell-pepper.svg). Override any of them here
+//    with a path or URL, e.g. { "Potato": "images/my-potato.png" }.
+export const IMAGES = {};
 
