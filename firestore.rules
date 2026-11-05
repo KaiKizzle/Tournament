@@ -1,0 +1,34 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Replace with the same Google account email(s) as ADMIN_EMAILS in config.js
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email in ['you@example.com'];
+    }
+
+    function votingOpen() {
+      return get(/databases/$(database)/documents/tournament/main).data.poll.open == true;
+    }
+
+    // Bracket state: everyone reads, only the organizer writes
+    match /tournament/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // One vote document per visitor (anonymous sign-in), only while voting is open
+    match /votes/{uid} {
+      allow read: if true;
+      allow create, update: if request.auth != null
+        && request.auth.uid == uid
+        && votingOpen()
+        && request.resource.data.keys().hasOnly(['picks'])
+        && request.resource.data.picks is map
+        && request.resource.data.picks.size() <= 70;
+      allow delete: if isAdmin();
+    }
+  }
+}
